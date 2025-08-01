@@ -1,105 +1,141 @@
 import streamlit as st
 import plotly.graph_objects as go
 
-# --- Inicialización de sesión ---
-if "page" not in st.session_state:
-    st.session_state.page = 0
-if "answers" not in st.session_state:
-    st.session_state.answers = {}
+st.set_page_config(page_title="Test de Salud Financiera", layout="centered")
 
-# --- Definición de preguntas por área ---
-areas = [
-    ("Gestión de Ingresos/Gastos", [
-        "¿Llevas un registro de todos tus ingresos y gastos?",
-        "¿Sabes cuánto dinero tienes disponible al final del mes?",
-        "¿Tu nivel de vida se adapta a tus ingresos?",
-        "¿Tienes un presupuesto mensual que respetas?"
-    ]),
-    ("Ahorro e Inversión", [
-        "¿Tienes el hábito de ahorrar regularmente?",
-        "¿Tienes un fondo de emergencia (mínimo 3 meses de gastos)?",
-        "¿Inviertes parte de tu dinero para hacerlo crecer?",
-        "¿Comprendes los productos en los que inviertes?"
-    ]),
-    ("Deudas y Créditos", [
-        "¿Tus deudas superan el 30% de tus ingresos?",
-        "¿Pagas puntualmente tus créditos?",
-        "¿Comparas antes de contratar un crédito?",
-        "¿Conoces el Costo Anual Total (CAT) de tus créditos?"
-    ]),
-    ("Protección y Planificación", [
-        "¿Tienes algún tipo de seguro (vida, salud, auto)?",
-        "¿Cuentas con un plan de retiro o pensión?",
-        "¿Tienes documentos financieros importantes organizados?",
-        "¿Has definido metas financieras claras?"
-    ]),
-]
+st.title("🧾 Test de Salud Financiera")
 
-opciones = {
-    "Nunca": 0,
-    "A veces": 1,
-    "Siempre": 2
+# Preguntas divididas por áreas
+preguntas_por_area = {
+    "Gestión de Ingresos/Gastos": [
+        {
+            "texto": "¿Llevas un registro detallado de tus ingresos y gastos?",
+            "opciones": {"Nunca": 0, "A veces": 1, "Siempre": 2},
+        },
+        {
+            "texto": "¿Haces un presupuesto mensual?",
+            "opciones": {"No": 0, "Solo para cosas grandes": 1, "Sí, cada mes": 2},
+        },
+    ],
+    "Ahorro e Inversión": [
+        {
+            "texto": "¿Tienes un ahorro destinado para emergencias?",
+            "opciones": {"No tengo": 0, "Sí, pero es poco": 1, "Sí, cubre 3 meses o más": 2},
+        },
+        {
+            "texto": "¿Inviertes regularmente?",
+            "opciones": {"No invierto": 0, "A veces": 1, "Sí, con objetivos claros": 2},
+        },
+    ],
+    "Deudas y Créditos": [
+        {
+            "texto": "¿Pagas puntualmente tus deudas?",
+            "opciones": {"Rara vez": 0, "Algunas veces me atraso": 1, "Siempre a tiempo": 2},
+        },
+        {
+            "texto": "¿Cuánta parte de tus ingresos va a pagar deudas?",
+            "opciones": {"Más del 50%": 0, "Entre 30-50%": 1, "Menos del 30%": 2},
+        },
+    ],
+    "Protección y Planificación": [
+        {
+            "texto": "¿Tienes seguro de vida o gastos médicos?",
+            "opciones": {"Ninguno": 0, "Solo uno de ellos": 1, "Ambos y actualizados": 2},
+        },
+        {
+            "texto": "¿Tienes metas financieras a largo plazo?",
+            "opciones": {"No tengo": 0, "Algunas sin plan": 1, "Sí, con estrategia": 2},
+        },
+    ],
 }
 
-# --- Encabezado ---
-st.title("🧾 Test de Salud Financiera")
-st.markdown("Área actual: **" + areas[st.session_state.page][0] + "**")
+# Estado de navegación por pantallas
+if "area_index" not in st.session_state:
+    st.session_state.area_index = 0
+if "respuestas" not in st.session_state:
+    st.session_state.respuestas = {}
 
-# --- Mostrar preguntas de la sección actual ---
-with st.form(f"form_{st.session_state.page}"):
-    for i, pregunta in enumerate(areas[st.session_state.page][1]):
-        key = f"{st.session_state.page}_{i}"
-        respuesta = st.radio(pregunta, list(opciones.keys()), key=key, index=-1)
-        st.session_state.answers[key] = opciones.get(respuesta, 0)
-    submitted = st.form_submit_button("Siguiente")
+# Áreas ordenadas
+areas = list(preguntas_por_area.keys())
+area_actual = areas[st.session_state.area_index]
+st.subheader(f"Área: {area_actual}")
 
-if submitted:
-    if st.session_state.page < len(areas) - 1:
-        st.session_state.page += 1
-        st.experimental_rerun()
+# Mostrar preguntas de la sección actual
+for i, pregunta in enumerate(preguntas_por_area[area_actual]):
+    key = f"{area_actual}_{i}"
+    respuesta = st.radio(
+        pregunta["texto"],
+        list(pregunta["opciones"].keys()),
+        key=key,
+        index=None,
+    )
+    if respuesta:
+        st.session_state.respuestas[key] = pregunta["opciones"][respuesta]
 
-# --- Resultado final ---
-if st.session_state.page == len(areas) - 1 and submitted:
-    st.markdown("---")
-    st.header("📊 Resultados del Test")
+# Botón para avanzar
+if st.button("Siguiente área ➡️"):
+    if all(f"{area_actual}_{i}" in st.session_state.respuestas for i in range(len(preguntas_por_area[area_actual]))):
+        if st.session_state.area_index < len(areas) - 1:
+            st.session_state.area_index += 1
+            st.experimental_rerun()
+        else:
+            st.session_state.area_index += 1  # señal de fin
+            st.experimental_rerun()
+    else:
+        st.warning("⚠️ Por favor responde todas las preguntas antes de continuar.")
 
-    puntajes = [0, 0, 0, 0]
-    for idx, (_, preguntas) in enumerate(areas):
-        for i in range(len(preguntas)):
-            puntajes[idx] += st.session_state.answers.get(f"{idx}_{i}", 0)
-        puntajes[idx] = round((puntajes[idx] / (2 * len(preguntas))) * 100)
+# Evaluación final
+if st.session_state.area_index >= len(areas):
+    st.header("🔎 Evaluación Final")
+    puntajes_por_area = {}
+    total_puntos = 0
+    total_maximo = 0
 
-    total = round(sum(puntajes) / len(puntajes))
-    estado = "Salud Sólida ✅" if total > 70 else "Salud Regular ⚠️" if total > 40 else "Salud Financiera Frágil ❌"
+    for area, preguntas in preguntas_por_area.items():
+        puntos_area = 0
+        max_area = 0
+        for i, pregunta in enumerate(preguntas):
+            key = f"{area}_{i}"
+            puntos_area += st.session_state.respuestas.get(key, 0)
+            max_area += max(pregunta["opciones"].values())
+        puntajes_por_area[area] = (puntos_area / max_area) * 100
+        total_puntos += puntos_area
+        total_maximo += max_area
 
-    st.subheader(f"Resultado General: {estado}")
-    st.metric("Puntaje Total", f"{total}/100")
+    puntaje_total = (total_puntos / total_maximo) * 100
+    st.metric("Tu puntaje total", f"{puntaje_total:.2f} / 100")
 
-    # --- Gráfico radial ---
+    if puntaje_total <= 40:
+        nivel = "💔 Salud Financiera Frágil"
+    elif puntaje_total <= 70:
+        nivel = "⚠️ Salud Financiera Regular"
+    else:
+        nivel = "✅ Salud Financiera Sólida"
+    st.subheader(f"Nivel: {nivel}")
+
+    # Gráfico radar
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
-        r=puntajes,
-        theta=[a[0] for a in areas],
+        r=list(puntajes_por_area.values()),
+        theta=list(puntajes_por_area.keys()),
         fill='toself',
-        name='Puntaje'
+        name='Desempeño por área'
     ))
-    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=False)
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        showlegend=False
+    )
     st.plotly_chart(fig)
 
-    # --- Recomendaciones extendidas ---
-    st.subheader("📌 Recomendaciones Prioritarias:")
-    recomendaciones = []
+    # Recomendaciones automáticas
+    st.markdown("### 📌 Recomendaciones Prioritarias")
+    peores_areas = sorted(puntajes_por_area.items(), key=lambda x: x[1])[:3]
+    recomendaciones = {
+        "Gestión de Ingresos/Gastos": "Empieza con un presupuesto básico y registra tus gastos diarios. Es el primer paso para tomar control de tu dinero.",
+        "Ahorro e Inversión": "Destina un porcentaje fijo de tu ingreso al ahorro cada mes. Incluso una pequeña cantidad constante te dará seguridad.",
+        "Deudas y Créditos": "Evita deudas innecesarias. Intenta reducirlas poco a poco y no te endeudes más de lo que puedes pagar.",
+        "Protección y Planificación": "Considera contratar un seguro básico y establecer objetivos financieros claros. Te protegerán ante imprevistos.",
+    }
+    for area, _ in peores_areas:
+        st.markdown(f"**🧩 {area}:** {recomendaciones[area]}")
 
-    if puntajes[0] < 70:
-        recomendaciones.append("💡 *Mejora tu control de ingresos y gastos.* Te recomiendo usar herramientas como apps de presupuesto o una hoja de cálculo para registrar tus movimientos. Saber en qué gastas te da poder para ahorrar.")
-    if puntajes[1] < 70:
-        recomendaciones.append("💡 *Refuerza tu cultura del ahorro e inversión.* Considera abrir una cuenta de ahorro separada, automatiza depósitos y aprende sobre instrumentos básicos como CETES o fondos de inversión.")
-    if puntajes[2] < 70:
-        recomendaciones.append("💡 *Revisa tus deudas.* Si más del 30% de tu ingreso se va a pagar deudas, estás en zona de riesgo. Considera consolidarlas o buscar mejores tasas.")
-    if puntajes[3] < 70:
-        recomendaciones.append("💡 *Planifica tu futuro.* Un seguro básico y un plan de retiro hacen toda la diferencia a largo plazo. Evalúa tus riesgos y toma medidas preventivas hoy.")
-
-    for r in recomendaciones[:3]:
-        st.markdown(r)
-
-    st.success("Puedes volver a comenzar si deseas mejorar tu puntuación.")
