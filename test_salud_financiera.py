@@ -2,120 +2,134 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Test de Salud Financiera", layout="centered")
+st.set_page_config(page_title="Test de Salud Financiera", layout="wide")
 
-st.title("💰 Test de Salud Financiera Interactivo")
+st.title("🧠 Test de Salud Financiera Interactivo")
+st.write("Responde honestamente las siguientes preguntas para conocer tu salud financiera actual.")
 
 areas = {
-    "Gestión de ingresos/gastos": [
-        "¿Llevas un registro mensual de tus ingresos y egresos?",
-        "¿Tienes un presupuesto mensual establecido?",
-        "¿Gastas más de lo que ganas?",
-        "¿Tienes gastos hormiga identificados y controlados?",
-        "¿Tienes ingresos adicionales a tu sueldo?"
+    "1. Ingresos y gastos": [
+        "¿Llevas un registro de tus ingresos y gastos mensualmente?",
+        "¿Tienes un presupuesto definido que sigues regularmente?",
+        "¿Sabes exactamente cuánto gastas al mes en necesidades básicas?",
+        "¿Cuentas con ingresos adicionales además de tu trabajo principal?",
+        "¿Tienes claro cuánto necesitas para vivir mensualmente?"
     ],
-    "Ahorro e inversión": [
-        "¿Ahorras regularmente cada mes?",
-        "¿Tienes un fondo de emergencia?",
-        "¿Inviertes tu dinero en instrumentos financieros?",
-        "¿Revisas y comparas productos de ahorro e inversión?",
-        "¿Conoces la diferencia entre ahorro e inversión?"
+    "2. Ahorro y emergencias": [
+        "¿Tienes un fondo de emergencia equivalente a 3-6 meses de gastos?",
+        "¿Ahorras una parte de tus ingresos cada mes?",
+        "¿Tus ahorros están en un lugar seguro y accesible?",
+        "¿Tienes metas de ahorro claras (ej. viaje, casa, retiro)?",
+        "¿Automatizas el ahorro (cuenta separada o domiciliación)?"
     ],
-    "Deudas y créditos": [
-        "¿Tienes deudas que superan el 30% de tus ingresos?",
-        "¿Pagas el total de tus tarjetas de crédito cada mes?",
-        "¿Has dejado de pagar alguna deuda en el último año?",
-        "¿Conoces tu historial crediticio?",
-        "¿Has solicitado préstamos para pagar otras deudas?"
+    "3. Deudas y créditos": [
+        "¿Tus deudas no superan el 30% de tus ingresos mensuales?",
+        "¿Pagas tus créditos a tiempo sin recurrir a intereses altos?",
+        "¿Conoces tu historial crediticio (ej. Buró de Crédito)?",
+        "¿Comparas opciones antes de adquirir una deuda?",
+        "¿Tienes un plan para eliminar tus deudas actuales?"
     ],
-    "Protección y planificación": [
-        "¿Tienes un seguro de vida, salud o auto?",
-        "¿Tienes una planificación financiera para el futuro?",
-        "¿Sabes cuánto necesitas para tu retiro?",
-        "¿Conoces los beneficios de los seguros?",
-        "¿Has dejado instrucciones financieras para tu familia?"
+    "4. Inversión y futuro financiero": [
+        "¿Has empezado a invertir tu dinero?",
+        "¿Conoces los diferentes instrumentos de inversión disponibles?",
+        "¿Tienes un plan para tu retiro?",
+        "¿Cuentas con seguros (vida, gastos médicos, auto, etc.)?",
+        "¿Planeas tu futuro financiero a mediano y largo plazo?"
     ]
 }
 
 opciones = {
-    "Siempre": 5,
-    "A veces": 3,
-    "Nunca": 0
+    "Nunca": 0,
+    "Rara vez": 1,
+    "A veces": 2,
+    "Frecuentemente": 3,
+    "Siempre": 4
 }
 
-respuestas = {}
-puntaje_por_area = {}
+respuestas = []
+puntos_por_area = {}
 
 for area, preguntas in areas.items():
     st.subheader(area)
-    total_area = 0
-    for i, pregunta in enumerate(preguntas, start=1):
-        respuesta = st.radio(pregunta, list(opciones.keys()), key=f"{area}-{i}")
-        total_area += opciones[respuesta]
-    puntaje_por_area[area] = total_area
+    area_total = 0
+    for pregunta in preguntas:
+        respuesta = st.selectbox(pregunta, options=[""] + list(opciones.keys()), key=pregunta)
+        valor = opciones.get(respuesta, 0)
+        respuestas.append(valor)
+        area_total += valor
+    puntos_por_area[area] = area_total
 
-# Calcular puntaje total ponderado
-total_max = 5 * 5 * 4  # 5 preguntas * 5 puntos * 4 áreas = 100
-total_usuario = sum(puntaje_por_area.values())
-porcentaje_total = round((total_usuario / total_max) * 100, 2)
+total = sum(respuestas)
+maximo = len(respuestas) * 4
+porcentaje = round((total / maximo) * 100)
 
 st.markdown("---")
-st.subheader("Resultado General")
+st.subheader("🔎 Resultado del Test")
 
-st.metric("Puntaje Total", f"{porcentaje_total}/100")
+st.metric(label="Puntaje Total", value=f"{total} / {maximo}", delta=f"{porcentaje}%")
 
-if porcentaje_total <= 40:
-    nivel = "🟥 Salud Financiera Frágil"
-elif porcentaje_total <= 70:
-    nivel = "🟨 Salud Financiera Regular"
+if porcentaje <= 40:
+    estado = "🔴 Salud Financiera Frágil"
+elif porcentaje <= 70:
+    estado = "🟠 Salud Financiera Regular"
 else:
-    nivel = "🟩 Salud Financiera Sólida"
+    estado = "🟢 Salud Financiera Sólida"
 
-st.success(f"Nivel: {nivel}")
+st.markdown(f"### {estado}")
 
-# Recomendaciones según nivel
-if porcentaje_total <= 40:
-    recomendaciones = [
-        "Reduce tus deudas y evita gastar más de lo que ganas.",
-        "Crea un fondo de emergencia de al menos 3 meses.",
-        "Evita usar tarjetas de crédito si no puedes pagar el total."
-    ]
-elif porcentaje_total <= 70:
-    recomendaciones = [
-        "Establece metas de ahorro claras.",
-        "Evalúa opciones de inversión seguras.",
-        "Mejora tu historial crediticio."
-    ]
+# Recomendaciones motivadoras
+st.subheader("📌 Recomendaciones Prioritarias:")
+
+if porcentaje <= 40:
+    st.markdown("""
+**1. Organiza tus ingresos y gastos ya mismo**  
+Llevar un registro diario o semanal te ayudará a visualizar a dónde va tu dinero y detectar fugas innecesarias.
+
+**2. Evita las compras impulsivas y crea un fondo de emergencia**  
+Comienza con pequeñas cantidades que puedas guardar. ¡Todo suma!
+
+**3. Busca educación financiera básica y gratuita**  
+El conocimiento financiero es el primer paso hacia tu libertad. Usa recursos como CONDUSEF o canales de YouTube confiables.
+    """)
+elif porcentaje <= 70:
+    st.markdown("""
+**1. Establece metas de ahorro realistas y automáticas**  
+Ahorra para emergencias, retiro, viajes o educación. Automatízalo si puedes.
+
+**2. Ordena tus deudas y mejora tu historial crediticio**  
+Empieza por las de mayor interés. Considera consolidarlas si aplica.
+
+**3. Comienza a invertir aunque sea poco**  
+Usa plataformas seguras como CETES o fondos para empezar.
+    """)
 else:
-    recomendaciones = [
-        "Diversifica tus inversiones.",
-        "Continúa planificando tu retiro.",
-        "Evalúa seguros adicionales que complementen tu protección."
-    ]
+    st.markdown("""
+**1. Diversifica tus inversiones y mide el riesgo**  
+Evalúa opciones como fondos, bienes raíces o acciones.
 
-st.markdown("### Recomendaciones Prioritarias:")
-for rec in recomendaciones:
-    st.markdown(f"- {rec}")
+**2. Protege tu salud financiera con seguros y testamentos**  
+Esto es parte fundamental de tu planeación patrimonial.
 
-# Gráfico radial
-st.subheader("Desempeño por Área")
+**3. Comparte tu experiencia y apoya a otros**  
+Enseñar fortalece tu aprendizaje y multiplica el bienestar financiero.
+    """)
+
+# Radar chart por área
+st.subheader("📊 Diagnóstico por Área")
 fig = go.Figure()
 
 fig.add_trace(go.Scatterpolar(
-    r=list(puntaje_por_area.values()),
-    theta=list(puntaje_por_area.keys()),
+    r=list(puntos_por_area.values()),
+    theta=list(puntos_por_area.keys()),
     fill='toself',
-    name='Resultado'
+    name='Puntaje por Área'
 ))
 
 fig.update_layout(
     polar=dict(
-        radialaxis=dict(
-            visible=True,
-            range=[0, 25]  # 5 preguntas * 5 puntos
-        )
+        radialaxis=dict(visible=True, range=[0, 20])
     ),
     showlegend=False
 )
 
-st.plotly_chart(fig)
+st.plotly_chart(fig, use_container_width=True)
