@@ -1,108 +1,121 @@
 import streamlit as st
+import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Test de Salud Financiera", layout="wide")
+st.set_page_config(page_title="Test de Salud Financiera", layout="centered")
 
 st.title("💰 Test de Salud Financiera Interactivo")
-st.markdown("Evalúa tu salud financiera en menos de 5 minutos. Las respuestas son confidenciales.")
 
 areas = {
     "Gestión de ingresos/gastos": [
-        "¿Tienes un presupuesto mensual?",
-        "¿Sabes cuánto gastas al mes?",
-        "¿Controlas tus gastos hormiga?",
-        "¿Tienes ingresos adicionales al sueldo principal?",
-        "¿Revisas tus recibos o estados de cuenta?"
+        "¿Llevas un registro mensual de tus ingresos y egresos?",
+        "¿Tienes un presupuesto mensual establecido?",
+        "¿Gastas más de lo que ganas?",
+        "¿Tienes gastos hormiga identificados y controlados?",
+        "¿Tienes ingresos adicionales a tu sueldo?"
     ],
     "Ahorro e inversión": [
-        "¿Tienes un fondo de ahorro?",
-        "¿Ahorro al menos 10% de tus ingresos?",
-        "¿Tienes inversiones activas (CETES, fondos, etc)?",
-        "¿Estás ahorrando para el retiro?",
-        "¿Tu ahorro supera 3 meses de tus gastos?"
+        "¿Ahorras regularmente cada mes?",
+        "¿Tienes un fondo de emergencia?",
+        "¿Inviertes tu dinero en instrumentos financieros?",
+        "¿Revisas y comparas productos de ahorro e inversión?",
+        "¿Conoces la diferencia entre ahorro e inversión?"
     ],
     "Deudas y créditos": [
-        "¿Pagas el total de tus tarjetas cada mes?",
-        "¿Tus deudas no superan el 30% de tu ingreso?",
-        "¿Conoces el CAT de tus créditos?",
-        "¿Has consolidado tus deudas si es necesario?",
-        "¿Tienes créditos que ya no puedes pagar?"
+        "¿Tienes deudas que superan el 30% de tus ingresos?",
+        "¿Pagas el total de tus tarjetas de crédito cada mes?",
+        "¿Has dejado de pagar alguna deuda en el último año?",
+        "¿Conoces tu historial crediticio?",
+        "¿Has solicitado préstamos para pagar otras deudas?"
     ],
     "Protección y planificación": [
-        "¿Tienes seguro médico o de vida?",
-        "¿Tienes un testamento o plan de sucesión?",
-        "¿Tienes un fondo de emergencia?",
-        "¿Tienes un plan financiero a mediano/largo plazo?",
-        "¿Has consultado a un asesor financiero?"
+        "¿Tienes un seguro de vida, salud o auto?",
+        "¿Tienes una planificación financiera para el futuro?",
+        "¿Sabes cuánto necesitas para tu retiro?",
+        "¿Conoces los beneficios de los seguros?",
+        "¿Has dejado instrucciones financieras para tu familia?"
     ]
 }
 
 opciones = {
-    "Siempre / Sí / Excelente": 5,
-    "A veces / Regular": 3,
-    "Nunca / No / Deficiente": 1
+    "Siempre": 5,
+    "A veces": 3,
+    "Nunca": 0
 }
 
 respuestas = {}
-puntajes_por_area = {}
+puntaje_por_area = {}
 
 for area, preguntas in areas.items():
-    st.header(area)
-    total = 0
-    for i, pregunta in enumerate(preguntas, 1):
-        r = st.radio(f"{i}. {pregunta}", list(opciones.keys()), key=f"{area}-{i}")
-        respuestas[f"{area}-{i}"] = opciones[r]
-        total += opciones[r]
-    puntajes_por_area[area] = round(total / (len(preguntas)*5) * 100)
+    st.subheader(area)
+    total_area = 0
+    for i, pregunta in enumerate(preguntas, start=1):
+        respuesta = st.radio(pregunta, list(opciones.keys()), key=f"{area}-{i}")
+        total_area += opciones[respuesta]
+    puntaje_por_area[area] = total_area
 
-total_final = round(sum(puntajes_por_area.values()) / 4)
+# Calcular puntaje total ponderado
+total_max = 5 * 5 * 4  # 5 preguntas * 5 puntos * 4 áreas = 100
+total_usuario = sum(puntaje_por_area.values())
+porcentaje_total = round((total_usuario / total_max) * 100, 2)
 
-st.subheader("📊 Resultados Generales")
+st.markdown("---")
+st.subheader("Resultado General")
 
-col1, col2 = st.columns(2)
+st.metric("Puntaje Total", f"{porcentaje_total}/100")
 
-with col1:
-    st.metric("Puntaje Total", f"{total_final}/100")
-    if total_final <= 40:
-        nivel = "🔴 Salud Financiera Frágil"
-        recs = [
-            "Haz un presupuesto mensual.",
-            "Elimina gastos innecesarios.",
-            "Inicia un fondo de emergencia."
-        ]
-    elif total_final <= 70:
-        nivel = "🟠 Salud Financiera Regular"
-        recs = [
-            "Refuerza tu ahorro.",
-            "Evalúa tus deudas.",
-            "Comienza a invertir con bajo riesgo."
-        ]
-    else:
-        nivel = "🟢 Salud Financiera Sólida"
-        recs = [
-            "Consolida tu patrimonio.",
-            "Planea tu retiro.",
-            "Diversifica tus inversiones."
-        ]
+if porcentaje_total <= 40:
+    nivel = "🟥 Salud Financiera Frágil"
+elif porcentaje_total <= 70:
+    nivel = "🟨 Salud Financiera Regular"
+else:
+    nivel = "🟩 Salud Financiera Sólida"
 
-    st.success(f"**Nivel Financiero:** {nivel}")
-    st.markdown("### 📌 Recomendaciones:")
-    for rec in recs:
-        st.markdown(f"- {rec}")
+st.success(f"Nivel: {nivel}")
 
-with col2:
-    fig = go.Figure(data=go.Scatterpolar(
-        r=list(puntajes_por_area.values()),
-        theta=list(puntajes_por_area.keys()),
-        fill='toself',
-        name='Puntaje'
-    ))
+# Recomendaciones según nivel
+if porcentaje_total <= 40:
+    recomendaciones = [
+        "Reduce tus deudas y evita gastar más de lo que ganas.",
+        "Crea un fondo de emergencia de al menos 3 meses.",
+        "Evita usar tarjetas de crédito si no puedes pagar el total."
+    ]
+elif porcentaje_total <= 70:
+    recomendaciones = [
+        "Establece metas de ahorro claras.",
+        "Evalúa opciones de inversión seguras.",
+        "Mejora tu historial crediticio."
+    ]
+else:
+    recomendaciones = [
+        "Diversifica tus inversiones.",
+        "Continúa planificando tu retiro.",
+        "Evalúa seguros adicionales que complementen tu protección."
+    ]
 
-    fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-        showlegend=False,
-        title="Gráfico Radial por Área"
-    )
+st.markdown("### Recomendaciones Prioritarias:")
+for rec in recomendaciones:
+    st.markdown(f"- {rec}")
 
-    st.plotly_chart(fig, use_container_width=True)
+# Gráfico radial
+st.subheader("Desempeño por Área")
+fig = go.Figure()
 
+fig.add_trace(go.Scatterpolar(
+    r=list(puntaje_por_area.values()),
+    theta=list(puntaje_por_area.keys()),
+    fill='toself',
+    name='Resultado'
+))
+
+fig.update_layout(
+    polar=dict(
+        radialaxis=dict(
+            visible=True,
+            range=[0, 25]  # 5 preguntas * 5 puntos
+        )
+    ),
+    showlegend=False
+)
+
+st.plotly_chart(fig)
