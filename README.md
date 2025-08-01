@@ -78,3 +78,7 @@ CONDUSEF México – Educación Financiera
 Esta herramienta tiene como propósito concientizar, motivar y orientar a los usuarios para que mejoren su salud financiera de forma sencilla, rápida y visual.
 
 ¿Quieres expandirlo? Puedes adaptar fácilmente este proyecto para incluir más preguntas, nuevas áreas, y recomendaciones personalizadas por perfil.
+
+------
+Para verlo funcionando 
+https://testsaludfinanciera-d8wwopz8zwugfzpruswxgn.streamlit.app/
