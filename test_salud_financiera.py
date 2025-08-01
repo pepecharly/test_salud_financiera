@@ -1,114 +1,120 @@
 import streamlit as st
 import plotly.graph_objects as go
 
-# Configurar la aplicación
-st.set_page_config(page_title="Test de Salud Financiera", layout="centered")
-st.title("🧾 Test de Salud Financiera")
+st.set_page_config(page_title="Test de Salud Financiera", layout="wide")
 
-# Definir áreas y preguntas
+st.title("🧮 Test de Salud Financiera")
+st.markdown("Responde honestamente cada pregunta. Al final recibirás una evaluación y recomendaciones personalizadas.")
+
+# ===================== CONFIGURACIÓN =====================
 areas = {
-    "Gestión de Ingresos/Gastos": [
-        ("¿Llevas un registro detallado de tus ingresos y gastos?", {"Nunca": 0, "A veces": 1, "Siempre": 2}),
-        ("¿Haces un presupuesto mensual?", {"No": 0, "Solo para cosas grandes": 1, "Sí, cada mes": 2}),
+    "Gestión de ingresos/gastos": [
+        "¿Llevas un registro de tus ingresos y egresos?",
+        "¿Revisas tu presupuesto mensualmente?",
+        "¿Qué haces si te sobra dinero a fin de mes?",
+        "¿Qué tan seguido haces compras impulsivas?",
+        "¿Sueles planear tus compras grandes con anticipación?"
     ],
-    "Ahorro e Inversión": [
-        ("¿Ahorras regularmente una parte de tus ingresos?", {"Nunca": 0, "A veces": 1, "Siempre": 2}),
-        ("¿Tienes alguna inversión en marcha?", {"Ninguna": 0, "Poca": 1, "Sí, diversificada": 2}),
+    "Ahorro e inversión": [
+        "¿Ahorras de forma regular?",
+        "¿Tienes un fondo de emergencias?",
+        "¿Inviertes parte de tus ahorros?",
+        "¿Conoces tu perfil de inversionista?",
+        "¿Tienes metas de ahorro definidas?"
     ],
-    "Deudas y Créditos": [
-        ("¿Tienes deudas que te cuesta pagar?", {"Sí, muchas": 0, "Algunas": 1, "Ninguna o manejables": 2}),
-        ("¿Pagas tus tarjetas de crédito a tiempo?", {"No": 0, "A veces": 1, "Siempre": 2}),
+    "Deudas y créditos": [
+        "¿Conoces el total de tus deudas?",
+        "¿Pagas puntualmente tus créditos?",
+        "¿Utilizas más del 30% de tu línea de crédito?",
+        "¿Pagas el mínimo en tus tarjetas de crédito?",
+        "¿Tienes un plan para liquidar tus deudas?"
     ],
-    "Protección y Planificación": [
-        ("¿Cuentas con un seguro de gastos médicos o vida?", {"Ninguno": 0, "Uno de ellos": 1, "Ambos": 2}),
-        ("¿Tienes un fondo de emergencia?", {"No": 0, "En proceso": 1, "Sí, cubre 3-6 meses": 2}),
+    "Protección y planificación": [
+        "¿Tienes seguro de salud o de vida?",
+        "¿Has hecho un testamento o plan de herencia?",
+        "¿Estás ahorrando para tu retiro?",
+        "¿Cuentas con un plan financiero a largo plazo?",
+        "¿Revisas tu historial crediticio al menos una vez al año?"
     ]
 }
 
-pesos = {
-    "Gestión de Ingresos/Gastos": 0.25,
-    "Ahorro e Inversión": 0.25,
-    "Deudas y Créditos": 0.25,
-    "Protección y Planificación": 0.25
+opciones = {
+    "Selecciona una opción": None,
+    "Nunca": 0,
+    "A veces": 1,
+    "Siempre": 2
 }
 
-# Inicializar estado
-if 'area_index' not in st.session_state:
-    st.session_state.area_index = 0
-if 'respuestas' not in st.session_state:
-    st.session_state.respuestas = {}
+pesos_area = {
+    "Gestión de ingresos/gastos": 0.25,
+    "Ahorro e inversión": 0.25,
+    "Deudas y créditos": 0.25,
+    "Protección y planificación": 0.25
+}
 
-# Obtener el área actual
-area_actual = list(areas.keys())[st.session_state.area_index]
-st.subheader(f"Área: {area_actual}")
+respuestas = {}
+puntajes_por_area = {}
 
-# Mostrar preguntas
-for i, (pregunta, opciones) in enumerate(areas[area_actual]):
-    key = f"{area_actual}_{i}"
-    respuesta = st.radio(pregunta, list(opciones.keys()), key=key, index=None)
-    if respuesta:
-        st.session_state.respuestas[key] = opciones[respuesta]
+# ===================== FORMULARIO =====================
+with st.form("test_formulario"):
+    for area, preguntas in areas.items():
+        st.subheader(area)
+        puntajes_por_area[area] = 0
+        for pregunta in preguntas:
+            seleccion = st.radio(pregunta, list(opciones.keys()), index=0, key=pregunta)
+            respuestas[pregunta] = opciones[seleccion]
 
-# Navegación
-col1, col2 = st.columns(2)
-if col1.button("⏮️ Anterior", disabled=st.session_state.area_index == 0):
-    st.session_state.area_index -= 1
-    st.experimental_rerun()
+    submit = st.form_submit_button("Evaluar mi salud financiera")
 
-if col2.button("⏭️ Siguiente", disabled=st.session_state.area_index == len(areas) - 1):
-    st.session_state.area_index += 1
-    st.experimental_rerun()
+# ===================== EVALUACIÓN =====================
+if submit:
+    faltantes = sum(1 for r in respuestas.values() if r is None)
+    if faltantes > 0:
+        st.warning(f"⚠️ Por favor responde todas las preguntas. Te faltan {faltantes}.")
+        st.stop()
 
-# Mostrar resultados al final
-if st.session_state.area_index == len(areas) - 1:
-    if st.button("🧠 Evaluar Salud Financiera"):
-        resultados = {}
-        total = 0
-        for area, preguntas in areas.items():
-            suma = sum([st.session_state.respuestas.get(f"{area}_{i}", 0) for i in range(len(preguntas))])
-            maximo = len(preguntas) * 2
-            porcentaje = (suma / maximo) * 100
-            resultados[area] = porcentaje
-            total += porcentaje * pesos[area]
+    for area, preguntas in areas.items():
+        total = sum(respuestas[p] for p in preguntas)
+        puntajes_por_area[area] = (total / (len(preguntas) * 2)) * 100  # puntaje sobre 100
 
-        # Clasificación
-        if total < 40:
-            estado = "🔴 Salud financiera frágil"
-            recomendaciones = [
-                "Comienza por registrar todos tus gastos e ingresos durante un mes.",
-                "Evita el uso excesivo de crédito y prioriza saldar tus deudas más caras.",
-                "Crea un fondo de emergencia aunque sea con pequeñas cantidades mensuales."
-            ]
-        elif total < 70:
-            estado = "🟡 Salud financiera regular"
-            recomendaciones = [
-                "Refuerza tu hábito de ahorro mensual automatizando transferencias.",
-                "Diversifica tus inversiones para que tu dinero no pierda valor.",
-                "Evalúa tus seguros y refuerza tu protección financiera personal."
-            ]
-        else:
-            estado = "🟢 Salud financiera sólida"
-            recomendaciones = [
-                "¡Excelente! Mantén tus hábitos y comparte tu experiencia con otros.",
-                "Revisa tus metas a largo plazo y considera inversiones estratégicas.",
-                "Evalúa construir patrimonio o emprendimiento para crecer financieramente."
-            ]
+    puntaje_total = sum(puntajes_por_area[area] * pesos_area[area] for area in areas)
 
-        # Mostrar resultado general
-        st.markdown(f"### Resultado General: {estado}")
-        st.markdown(f"**Puntaje total:** {round(total, 2)} / 100")
+    if puntaje_total < 41:
+        nivel = "🔴 Salud Financiera Frágil"
+        recomendaciones = [
+            "Empieza por llevar un control básico de tus gastos e ingresos. Tener claridad sobre tu dinero es el primer paso para mejorar.",
+            "Evita seguir usando tus tarjetas si estás pagando solo el mínimo. Reestructura tus deudas y busca saldarlas lo antes posible.",
+            "Establece una meta sencilla de ahorro, aunque sea mínima. La constancia es más importante que la cantidad al inicio."
+        ]
+    elif puntaje_total < 71:
+        nivel = "🟡 Salud Financiera Regular"
+        recomendaciones = [
+            "Refuerza tus hábitos de ahorro. Considera separar al menos el 10% de tus ingresos cada mes y busca instrumentos de inversión seguros.",
+            "Analiza tus deudas: si alguna te genera intereses altos, busca consolidarlas o negociar mejores condiciones.",
+            "Evalúa tus coberturas. Un seguro básico de salud y un fondo de emergencia pueden evitarte grandes problemas."
+        ]
+    else:
+        nivel = "🟢 Salud Financiera Sólida"
+        recomendaciones = [
+            "¡Felicidades! Ahora enfócate en crecer: revisa instrumentos de inversión a mediano y largo plazo.",
+            "Comparte tu conocimiento con tu familia para que también adopten buenos hábitos financieros.",
+            "Establece metas financieras grandes (como tu retiro o patrimonio) y planea cómo alcanzarlas con asesoría profesional."
+        ]
 
-        # Mostrar gráfico radial
-        fig = go.Figure(data=go.Scatterpolar(
-            r=list(resultados.values()),
-            theta=list(resultados.keys()),
-            fill='toself',
-            name='Salud Financiera'
-        ))
-        fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=False)
-        st.plotly_chart(fig)
+    # ===================== RESULTADOS =====================
+    st.success(f"### Tu nivel financiero es: {nivel}")
+    st.markdown(f"**Puntaje total:** {round(puntaje_total, 2)} / 100")
 
-        # Mostrar recomendaciones
-        st.markdown("### 📌 Recomendaciones Prioritarias:")
-        for rec in recomendaciones:
-            st.markdown(f"- {rec}")
+    st.subheader("📊 Desempeño por área")
+    fig = go.Figure(data=go.Scatterpolar(
+        r=[puntajes_por_area[area] for area in areas],
+        theta=list(areas.keys()),
+        fill='toself',
+        name='Puntaje'
+    ))
+    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=False)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("🧠 Recomendaciones Prioritarias:")
+    for rec in recomendaciones:
+        st.markdown(f"- {rec}")
